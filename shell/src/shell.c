@@ -18,13 +18,36 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-
+#include "config.h"
+#include "header.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <posixeg/tparse.h>
 #include <posixeg/debug.h>
+char* SHELL_PREFIX;
 
-#define PROMPT "@:"
+void init(){
+  FILE *fp;
+  char buffer[5000];
+  char *iter;
+
+  /* Open the command for reading. */
+  fp = popen("who", "r");
+  if (fp == NULL) {
+    printf("Failed to run command\n" );
+    exit(1);
+  }
+
+  /* Read the output a line at a time - output it. */
+  fgets(buffer, sizeof(buffer)-1, fp);
+
+  iter = strtok(buffer," ");
+  SHELL_PREFIX = (char*)malloc(sizeof(char)*(strlen(iter)+3));
+  sprintf(SHELL_PREFIX,"[%s]:",iter);
+
+  /* close */
+  pclose(fp);
+}
 
 /* void test(void); */
 
@@ -37,6 +60,8 @@ int main (int argc, char **argv)
 
   pipeline_t *pipeline;
 
+  init();
+
   command_line = new_command_line ();
 
   pipeline = new_pipeline ();
@@ -45,9 +70,8 @@ int main (int argc, char **argv)
 
   while (go_on)
     {
-      /* Prompt. */
 
-      printf ("%s ", PROMPT);
+      printf ("%s ", SHELL_PREFIX);
       fflush (stdout);
       aux = read_command_line (command_line);
       sysfatal (aux<0);
