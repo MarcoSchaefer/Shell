@@ -20,4 +20,4 @@ run
 
 `ldconfig /usr/local/lib`
 
-to tell your dynamic linker to search in this path too. Alternatively, you can move all content of */usr/local/lib* folder to */usr/lib*, but this discouraged.
+to tell your dynamic linker to search in this path too. Alternatively, you can move all content of */usr/local/lib* folder to */usr/lib*, but this is discouraged.
