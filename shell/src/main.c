@@ -1,10 +1,10 @@
-/* main.c - Shell
+/* main.c - Ipiranga Shell
 
    Copyright (c) 2018
 
-   This file is part of POSIXeg.
+   This file is part of Ipiranga Shell.
 
-   POSIXeg is free software: you can redistribute it and/or modify
+   Ipiranga Shell is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
    the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
