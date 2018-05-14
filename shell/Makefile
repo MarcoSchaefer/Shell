@@ -4,4 +4,4 @@ shell : src/main.c
 
 test : src/main.c
 	mkdir -p bin
-	gcc -o bin/shell src/main.c src/init.c -lposixeg -Wl,rpath='/usr/local/lib'
+	gcc -o bin/shell src/main.c src/init.c -lposixeg -Wl,-rpath='/usr/local/lib'
