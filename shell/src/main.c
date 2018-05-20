@@ -24,6 +24,8 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 #include <posixeg/tparse.h>
 #include <posixeg/debug.h>
 
@@ -36,9 +38,10 @@ int main (int argc, char **argv)
 {
   char* SHELL_PREFIX;
   buffer_t *command_line;
-  int i, j, aux, pid, status;
+  int i, j, aux, pid, status, fd;
   pipeline_t *pipeline;
 
+  fd = -1;
 
   init(&SHELL_PREFIX);
   command_line = new_command_line ();
@@ -73,17 +76,17 @@ int main (int argc, char **argv)
           /*printf ("  Run pipeline in background\n")*/;
         }
 
-
-    	  if ( REDIRECT_STDIN(pipeline)){
-          /*printf ("  Redirect input from %s\n", pipeline->file_in);*/
-        }
-    	  if ( REDIRECT_STDOUT(pipeline)){
-          /*printf ("  Redirect output to  %s\n", pipeline->file_out);*/
-        }
-
         for (i=0; pipeline->command[i][0]; i++){
           pid = fork();
           if(pid==0){
+            if ( REDIRECT_STDIN(pipeline)){
+              close(0);
+              fd = open (pipeline->file_in, O_RDONLY,  S_IRUSR | S_IWUSR);
+            }
+        	  if ( REDIRECT_STDOUT(pipeline)){
+              close(1);
+              fd = open (pipeline->file_out, O_CREAT | O_TRUNC | O_RDWR,  S_IRUSR | S_IWUSR);
+            }
             execvp(pipeline->command[i][0], pipeline->command[i]);
           }else{
             wait(&status);
@@ -93,6 +96,7 @@ int main (int argc, char **argv)
     	}
     }
 
+  close(fd);
   release_command_line (command_line);
   release_pipeline (pipeline);
 
