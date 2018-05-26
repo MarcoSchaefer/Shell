@@ -31,10 +31,6 @@
 #include <string.h>
 
 
-/* void test(void); */
-
-int go_on = 1;			/* This variable controls the main loop. */
-
 int main (int argc, char **argv)
 {
   buffer_t *command_line;
@@ -46,35 +42,14 @@ int main (int argc, char **argv)
   fd = -1;
   command_line = new_command_line ();
   pipeline = new_pipeline ();
-
-  /* This is the main loop. */
-  while (go_on){
+  while (1){
 
       printPrefix();
       fflush (stdout);
       aux = read_command_line (command_line);
       sysfatal (aux<0);
 
-      /* Parse command line (see tparse.*) */
-
       if (!parse_command_line (command_line, pipeline)){
-    	  /*printf ("  Pipeline has %d command(s)\n", pipeline->ncommands);*/
-
-    	  for (i=0; pipeline->command[i][0]; i++)
-    	    {
-    	      /*printf ("  Command %d has %d argument(s): ", i, pipeline->narguments[i]);*/
-    	      for (j=0; pipeline->command[i][j]; j++){
-    		      /*printf ("%s ", pipeline->command[i][j]);*/
-            }
-    	      /*printf ("\n");*/
-    	    }
-
-
-    	  if ( RUN_FOREGROUND(pipeline)){
-          /*printf ("  Run pipeline in foreground\n");*/
-        }else{
-          /*printf ("  Run pipeline in background\n")*/;
-        }
 
         /*Create pipes */
         if(pipeline->ncommands>1){
@@ -82,104 +57,54 @@ int main (int argc, char **argv)
           for(i=0;i<pipeline->ncommands;i++){
             pipefds[i] = (int*)malloc(2*sizeof(int));
           }
-          /* Create N-1 pipes. */
             for (i=0; i<pipeline->ncommands-1; i++)
               pipe(pipefds[i]);
-
-
-            /* Fork N processes. Note that, only the parent iterates through the loop,
-               while childs immediately leave the loop and procedd.*/
 
             i=0;
             while ( (i<pipeline->ncommands) && (pid=fork()) )
               i++;
 
-            /* In the parent only. */
-
-            if (pid>0)
-              {
-                /* Close all pipes. */
-
+            if (pid>0){
                 for (j=0; j<pipeline->ncommands-1; j++)
                 	{
                 	  close (pipefds[j][0]);
                 	  close (pipefds[j][1]);
                 	}
-
-                /* Wait for the last subprocess. */
-
                 waitpid (pid, &status, 0);
-
               }
 
-            /* In each subprocess. */
-
-            if (pid==0)
-              {
-
-                /* If I'm the first process in the pipeline */
+            if (pid==0){
                 if(i==0){
-
-                	/* Close the "read" end of the first pipe */
                 	close (pipefds[i][0]);
-
-                	/* Redirect my output to the "write" end of the first pipe */
                 	close (1);
                 	dup(pipefds[i][1]);
                 	close (pipefds[i][1]);
-
-
-          	/* Close both ends of all the pipes I won't use, i.e. all the pipes
-          	   whose indexes are greater than my own */
                 	for(j=1; j<pipeline->ncommands-1; j++){
                 	  close (pipefds[j][0]);
                 	  close (pipefds[j][1]);
                 	}
                 }
 
-                /* If I'm the last process in the pipeline */
                 else if(i==pipeline->ncommands-1){
-
-
-                	/* Close the "write" end of the last pipe */
                 	close (pipefds[i-1][1]);
-
-                	/* Redirect my input to the "read" end of the last pipe */
                 	close (0);
                 	dup(pipefds[i-1][0]);
                 	close (pipefds[i-1][0]);
-
-                	/* Close both ends of all the pipes I won't use, i.e. all the pipes
-                	   except the last one */
                 	for(j=0; j<pipeline->ncommands-2; j++){
                 	  close (pipefds[j][0]);
                 	  close (pipefds[j][1]);
                 	}
-
-                }
-
-                /* If I'm any process other than the first or the last */
-                else{
-
-                	/* Redirect my input to the "read" end of the proper pipe, i.e. the
-                	   pipe that has its index equal to mine minus 1 */
+                }else{
                 	close (0);
                 	dup(pipefds[i-1][0]);
-
-                	/* Redirect my input to the "write" end of the proper pipe, i.e.
-                	   the pipe that has its index equal to mine */
                 	close (1);
                 	dup(pipefds[i][1]);
-
-                	/* Close all the ends of all the pipes */
                 	for(j=0; j<pipeline->ncommands-1; j++){
                 	  close (pipefds[j][0]);
                 	  close (pipefds[j][1]);
                 	}
-
                 }
 
-                /* Run the command I need to */
                 execvp(pipeline->command[i][0], pipeline->command[i]);
               }
         }else{
@@ -210,10 +135,6 @@ int main (int argc, char **argv)
 
           }
         }
-
-
-
-
     	}
     }
 
