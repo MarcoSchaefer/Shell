@@ -28,6 +28,7 @@
 #include <fcntl.h>
 #include <posixeg/tparse.h>
 #include <posixeg/debug.h>
+#include <string.h>
 
 
 /* void test(void); */
@@ -36,22 +37,19 @@ int go_on = 1;			/* This variable controls the main loop. */
 
 int main (int argc, char **argv)
 {
-  char* SHELL_PREFIX;
   buffer_t *command_line;
   int i, j, aux, pid, status, fd;
   int **pipefds;
   pipeline_t *pipeline;
 
   fd = -1;
-
-  init(&SHELL_PREFIX);
   command_line = new_command_line ();
   pipeline = new_pipeline ();
 
   /* This is the main loop. */
   while (go_on){
 
-      printf ("%s ", SHELL_PREFIX);
+      printPrefix();
       fflush (stdout);
       aux = read_command_line (command_line);
       sysfatal (aux<0);
@@ -185,21 +183,25 @@ int main (int argc, char **argv)
               }
         }else{
           for (i=0; pipeline->command[i][0]; i++){
-            /*printf ("  Pipeline has %d command(s)\n", pipeline->ncommands);*/
-            pid = fork();
-            if(pid==0){
-              if ( REDIRECT_STDIN(pipeline)){
-                close(0);
-                fd = open (pipeline->file_in, O_RDONLY,  S_IRUSR | S_IWUSR);
-              }
-          	  if ( REDIRECT_STDOUT(pipeline)){
-                close(1);
-                fd = open (pipeline->file_out, O_CREAT | O_TRUNC | O_RDWR,  S_IRUSR | S_IWUSR);
-              }
-              execvp(pipeline->command[i][0], pipeline->command[i]);
-            }else{
-              wait(&status);
-            }
+	    if(strcmp(pipeline->command[i][0],"cd")==0){
+
+	    }else{
+		pid = fork();
+            	if(pid==0){
+              		if ( REDIRECT_STDIN(pipeline)){
+                		close(0);
+               			fd = open (pipeline->file_in, O_RDONLY,  S_IRUSR | S_IWUSR);
+              		}
+          	  	if ( REDIRECT_STDOUT(pipeline)){
+                		close(1);
+                		fd = open (pipeline->file_out, O_CREAT | O_TRUNC | O_RDWR,  S_IRUSR | S_IWUSR);
+              		}
+              		execvp(pipeline->command[i][0], pipeline->command[i]);
+            	}else{
+              		wait(&status);
+            	}
+	    }
+
           }
         }
 
