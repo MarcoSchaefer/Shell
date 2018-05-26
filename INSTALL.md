@@ -8,6 +8,10 @@ To compile it, go to project's root directory and type:
 
 It will compile the files which are inside *src* directory and will create an executable *shell* inside the *bin* directory.
 
+To install it in your system:
+
+`sudo make install`
+
 ## Errors
 
 By default, posixeg library is intalled into */usr/local/lib* folder, but this folder isn't in the default search paths of most of the dynamic linkers
