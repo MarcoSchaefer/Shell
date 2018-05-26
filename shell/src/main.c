@@ -40,6 +40,7 @@ int main (int argc, char **argv)
   buffer_t *command_line;
   int i, j, aux, pid, status, fd;
   int **pipefds;
+  char *buffer;
   pipeline_t *pipeline;
 
   fd = -1;
@@ -183,24 +184,29 @@ int main (int argc, char **argv)
               }
         }else{
           for (i=0; pipeline->command[i][0]; i++){
-	    if(strcmp(pipeline->command[i][0],"cd")==0){
-
-	    }else{
-		pid = fork();
-            	if(pid==0){
-              		if ( REDIRECT_STDIN(pipeline)){
-                		close(0);
-               			fd = open (pipeline->file_in, O_RDONLY,  S_IRUSR | S_IWUSR);
-              		}
-          	  	if ( REDIRECT_STDOUT(pipeline)){
-                		close(1);
-                		fd = open (pipeline->file_out, O_CREAT | O_TRUNC | O_RDWR,  S_IRUSR | S_IWUSR);
-              		}
-              		execvp(pipeline->command[i][0], pipeline->command[i]);
-            	}else{
-              		wait(&status);
-            	}
-	    }
+        	    if(strcmp(pipeline->command[i][0],"cd")==0){
+                chdir(pipeline->command[i][1]);
+              }else if(strcmp(pipeline->command[i][0],"echo")==0){
+                buffer=strtok(pipeline->command[i][1],"$");
+                printf("%s\n",getenv(buffer));
+        	    }else{
+    		          pid = fork();
+                	if(pid==0){
+                  		if ( REDIRECT_STDIN(pipeline)){
+                    		close(0);
+                   			fd = open (pipeline->file_in, O_RDONLY,  S_IRUSR | S_IWUSR);
+                  		}
+            	  	    if ( REDIRECT_STDOUT(pipeline)){
+                    		close(1);
+                    		fd = open (pipeline->file_out, O_CREAT | O_TRUNC | O_RDWR,  S_IRUSR | S_IWUSR);
+                  		}
+                  		if(execvp(pipeline->command[i][0], pipeline->command[i])<0){
+                        printf("\033[1;31m[ERROR]:\033[0m command not found: %s\n",pipeline->command[i][0]);
+                      }
+                	}else{
+                  		wait(&status);
+                	}
+	           }
 
           }
         }
