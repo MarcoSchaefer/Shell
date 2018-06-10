@@ -17,5 +17,8 @@ int builtinCommand(char** command){
     if(strcmp(command[0],"exit")==0){
         exit(0);
     }
+    if(strcmp(command[0],"jobs")==0){
+        return 1;
+    }
     return 0;
 }
