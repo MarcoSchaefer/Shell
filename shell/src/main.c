@@ -39,7 +39,6 @@ int main (int argc, char **argv)
     buffer_t *command_line;
     int i, j, aux, pid, status, fd;
     int **pipefds;
-    pipeline_t *pipeline;
 
     fd = -1;
     command_line = new_command_line ();
@@ -50,11 +49,14 @@ int main (int argc, char **argv)
     sigaction(SIGTSTP, &signal_handler, NULL); /* SIGTSTP is ^Z */
     sigaction(SIGINT, &signal_handler, NULL); /* SIGINT is ^C */
 
+    job_list = new_list(free);
+
     while (1){
         printPrefix();
         fflush (stdout);
+        current_pid = 0;
         aux = read_command_line (command_line);
-        if (aux>=0&&!parse_command_line (command_line, pipeline)){
+        if (aux>=1&&!parse_command_line (command_line, pipeline)){
 
             /*Create pipes */
             if(pipeline->ncommands>1){
@@ -75,6 +77,7 @@ int main (int argc, char **argv)
                         close (pipefds[j][0]);
                         close (pipefds[j][1]);
                     }
+                    current_pid = pid;
                     waitpid (pid, &status, 0);
                     fflush (stdout);
                 }
@@ -136,6 +139,7 @@ int main (int argc, char **argv)
                             exit(1);
                         }
                     }else{
+                        current_pid = pid;
                         waitpid (pid, &status, 0);
                         fflush (stdout);
                     }

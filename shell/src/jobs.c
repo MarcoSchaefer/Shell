@@ -10,9 +10,14 @@
 void addJob(pipeline_t *pipeline){
     list_node_t *new_node;
     job* new_job;
+
+    if(current_pid<=0){
+        return;
+    }
     if(pipeline->ncommands<1){
         return;
     }
+    fflush(stdout);
     new_node = (list_node_t*)malloc(sizeof(list_node_t));
     new_node = append_node (job_list);
     new_job = (job*)malloc(sizeof(job));
