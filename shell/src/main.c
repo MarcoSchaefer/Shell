@@ -36,7 +36,6 @@ int main (int argc, char **argv)
 {
     struct sigaction signal_handler;
 
-
     buffer_t *command_line;
     int i, j, aux, pid, status, fd;
     int **pipefds;
@@ -46,14 +45,12 @@ int main (int argc, char **argv)
     command_line = new_command_line ();
     pipeline = new_pipeline ();
 
-
     memset(&signal_handler, 0, sizeof(struct sigaction));
     signal_handler.sa_handler = signalHandler;
     sigaction(SIGTSTP, &signal_handler, NULL); /* SIGTSTP is ^Z */
     sigaction(SIGINT, &signal_handler, NULL); /* SIGINT is ^C */
 
     while (1){
-
         printPrefix();
         fflush (stdout);
         aux = read_command_line (command_line);
@@ -79,6 +76,7 @@ int main (int argc, char **argv)
                         close (pipefds[j][1]);
                     }
                     waitpid (pid, &status, 0);
+                    fflush (stdout);
                 }
 
                 if (pid==0){
@@ -138,7 +136,8 @@ int main (int argc, char **argv)
                             exit(1);
                         }
                     }else{
-                        wait(&status);
+                        waitpid (pid, &status, 0);
+                        fflush (stdout);
                     }
                 }
             }

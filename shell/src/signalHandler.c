@@ -11,6 +11,7 @@ void signalHandler(int signal){
             break;
         case SIGTSTP:
             printf("\n");
+            addJob(pipeline);
             break;
     }
 }
