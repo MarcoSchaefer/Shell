@@ -29,27 +29,35 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <posixeg/tparse.h>
 #include <posixeg/debug.h>
 #include <string.h>
+#include <signal.h>
 
 
 int main (int argc, char **argv)
 {
+    struct sigaction signal_handler;
+
+
     buffer_t *command_line;
     int i, j, aux, pid, status, fd;
     int **pipefds;
-    char *buffer;
     pipeline_t *pipeline;
 
     fd = -1;
     command_line = new_command_line ();
     pipeline = new_pipeline ();
+
+
+    memset(&signal_handler, 0, sizeof(struct sigaction));
+    signal_handler.sa_handler = signalHandler;
+    sigaction(SIGTSTP, &signal_handler, NULL); /* SIGTSTP is ^Z */
+    sigaction(SIGINT, &signal_handler, NULL); /* SIGINT is ^C */
+
     while (1){
 
         printPrefix();
         fflush (stdout);
         aux = read_command_line (command_line);
-        sysfatal (aux<0);
-
-        if (!parse_command_line (command_line, pipeline)){
+        if (aux>=0&&!parse_command_line (command_line, pipeline)){
 
             /*Create pipes */
             if(pipeline->ncommands>1){
@@ -104,35 +112,34 @@ int main (int argc, char **argv)
                             close (pipefds[j][1]);
                         }
                     }
-
-                    execvp(pipeline->command[i][0], pipeline->command[i]);
-                }
-            }else{
-                for (i=0; pipeline->command[i][0]; i++){
-                    if(strcmp(pipeline->command[i][0],"cd")==0){
-                        chdir(pipeline->command[i][1]);
-                    }else if(strcmp(pipeline->command[i][0],"echo")==0){
-                        buffer=strtok(pipeline->command[i][1],"$");
-                        printf("%s\n",getenv(buffer));
+                    if(builtinCommand(pipeline->command[i])){
+                        exit(1);
                     }else{
-                        pid = fork();
-                        if(pid==0){
-                            if ( REDIRECT_STDIN(pipeline)){
-                                close(0);
-                                fd = open (pipeline->file_in, O_RDONLY,  S_IRUSR | S_IWUSR);
-                            }
-                            if ( REDIRECT_STDOUT(pipeline)){
-                                close(1);
-                                fd = open (pipeline->file_out, O_CREAT | O_TRUNC | O_RDWR,  S_IRUSR | S_IWUSR);
-                            }
-                            if(execvp(pipeline->command[i][0], pipeline->command[i])<0){
-                                printf("\033[1;31m[ERROR]:\033[0m command not found: %s\n",pipeline->command[i][0]);
-                            }
-                        }else{
-                            wait(&status);
+                        if(execvp(pipeline->command[i][0], pipeline->command[i])<0){
+                            printf("\033[1;31m[ERROR]:\033[0m command not found: %s\n",pipeline->command[i][0]);
+                            exit(1);
                         }
                     }
-
+                }
+            }else{
+                if(!builtinCommand(pipeline->command[0])){
+                    pid = fork();
+                    if(pid==0){
+                        if ( REDIRECT_STDIN(pipeline)){
+                            close(0);
+                            fd = open (pipeline->file_in, O_RDONLY,  S_IRUSR | S_IWUSR);
+                        }
+                        if ( REDIRECT_STDOUT(pipeline)){
+                            close(1);
+                            fd = open (pipeline->file_out, O_CREAT | O_TRUNC | O_RDWR,  S_IRUSR | S_IWUSR);
+                        }
+                        if(execvp(pipeline->command[0][0], pipeline->command[0])<0){
+                            printf("\033[1;31m[ERROR]:\033[0m command not found: %s\n",pipeline->command[0][0]);
+                            exit(1);
+                        }
+                    }else{
+                        wait(&status);
+                    }
                 }
             }
         }
