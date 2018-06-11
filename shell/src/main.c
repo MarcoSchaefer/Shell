@@ -43,6 +43,7 @@ int main (int argc, char **argv)
     fd = -1;
     command_line = new_command_line ();
     pipeline = new_pipeline ();
+    shell_group = getpgid(getpid());
 
     memset(&signal_handler, 0, sizeof(struct sigaction));
     signal_handler.sa_handler = signalHandler;
@@ -50,8 +51,10 @@ int main (int argc, char **argv)
     sigaction(SIGINT, &signal_handler, NULL); /* SIGINT is ^C */
 
     job_list = new_list(free);
-
     while (1){
+        /*
+        printf("[SGP: %d]",shell_group);
+        */
         printPrefix();
         fflush (stdout);
         current_pid = 0;
@@ -134,6 +137,12 @@ int main (int argc, char **argv)
                             close(1);
                             fd = open (pipeline->file_out, O_CREAT | O_TRUNC | O_RDWR,  S_IRUSR | S_IWUSR);
                         }
+                        /*
+                        setsid();
+                        printf("{%d %d %d}",errno,getpgid(getpid()),getpid());
+                        fflush(stdout);
+                        addJob(pipeline,0);
+                        */
                         if(execvp(pipeline->command[0][0], pipeline->command[0])<0){
                             printf("\033[1;31m[ERROR]:\033[0m command not found: %s\n",pipeline->command[0][0]);
                             exit(1);

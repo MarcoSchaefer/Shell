@@ -26,3 +26,7 @@ void addJob(pipeline_t *pipeline){
     new_job->pid = current_pid;
     new_node->value = new_job;
 }
+
+void delJob(){
+
+}
